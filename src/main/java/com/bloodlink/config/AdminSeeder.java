@@ -10,46 +10,77 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/** Creates the first admin (or promotes an existing account) from app.admin.email / app.admin.password. */
 @Component
 public class AdminSeeder implements ApplicationRunner {
-    private static final Logger log = LoggerFactory.getLogger(AdminSeeder.class);
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AdminSeeder.class);
+
     private final UserRepository users;
     private final PasswordEncoder encoder;
 
-    @Value("${app.admin.email:}") private String adminEmail;
-    @Value("${app.admin.password:}") private String adminPassword;
+    @Value("${app.admin.email:}")
+    private String adminEmail;
 
-    public AdminSeeder(UserRepository users, PasswordEncoder encoder) { this.users = users; this.encoder = encoder; }
+    @Value("${app.admin.password:}")
+    private String adminPassword;
+
+    public AdminSeeder(UserRepository users,
+                       PasswordEncoder encoder) {
+        this.users = users;
+        this.encoder = encoder;
+    }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (adminEmail == null || adminEmail.isBlank()) return;
+
+        log.info("AdminSeeder started. Admin email configured: {}",
+                adminEmail != null && !adminEmail.isBlank());
+
+        if (adminEmail == null || adminEmail.isBlank()) {
+            log.warn("ADMIN_EMAIL is empty. Admin setup skipped.");
+            return;
+        }
+
         String email = adminEmail.trim().toLowerCase();
+
         User existing = users.findByEmailIgnoreCase(email).orElse(null);
+
         if (existing != null) {
-            if (!"ADMIN".equals(existing.role) || !existing.enabled) {
-                existing.role = "ADMIN";
-                existing.enabled = true;
-                users.save(existing);
-                log.info("Existing account {} is now an admin", email);
+
+            existing.role = "ADMIN";
+            existing.enabled = true;
+
+            if (adminPassword != null && !adminPassword.isBlank()) {
+                existing.passwordHash = encoder.encode(adminPassword);
+            } else {
+                log.warn("ADMIN_PASSWORD is empty. Existing password retained.");
             }
+
+            users.save(existing);
+
+            log.info("Existing account promoted to ADMIN and saved.");
             return;
         }
+
         if (adminPassword == null || adminPassword.length() < 6) {
-            log.warn("app.admin.password must be at least 6 characters; admin account not created");
+            log.warn("ADMIN_PASSWORD must be at least 6 characters. Admin account not created.");
             return;
         }
-        User u = new User();
-        u.name = "Administrator";
-        u.email = email;
-        u.passwordHash = encoder.encode(adminPassword);
-        u.phone = "0000000000";
-        u.bloodGroup = "O+";
-        u.city = "Admin";
-        u.available = false;   // the admin never receives donor emails
-        u.role = "ADMIN";
-        users.save(u);
-        log.info("Admin account created for {}", email);
+
+        User admin = new User();
+        admin.name = "Administrator";
+        admin.email = email;
+        admin.passwordHash = encoder.encode(adminPassword);
+        admin.phone = "0000000000";
+        admin.bloodGroup = "O+";
+        admin.city = "Admin";
+        admin.available = false;
+        admin.role = "ADMIN";
+        admin.enabled = true;
+
+        users.save(admin);
+
+        log.info("Admin account created successfully.");
     }
 }
