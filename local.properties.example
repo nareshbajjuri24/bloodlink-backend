@@ -1,0 +1,19 @@
+# Copy this file to local.properties and fill in your real values. local.properties is git-ignored.
+
+# Neon: Console -> your project -> Connect -> copy host, db name, user, password
+spring.datasource.url=jdbc:postgresql://ep-xxxxxx.ap-southeast-1.aws.neon.tech/bloodlink_v2?sslmode=require
+spring.datasource.username=neondb_owner
+spring.datasource.password=YOUR_NEON_PASSWORD
+
+# Gmail (local development): turn on 2-step verification, then create an "App password" (16 characters)
+spring.mail.username=yourname@gmail.com
+spring.mail.password=YOUR_16_CHAR_APP_PASSWORD
+
+# Link placed inside the emails. For testing on a phone use your PC's LAN IP, e.g. http://192.168.1.10:5173
+app.frontend-url=http://localhost:5173
+
+app.jwt.secret=put-a-long-random-string-here-at-least-32-characters
+
+# First admin. Use an existing account's email to promote it, or a new email + password to create one.
+app.admin.email=admin@example.com
+app.admin.password=ChangeMe123
